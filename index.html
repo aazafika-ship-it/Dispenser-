@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P5RA Project | Plywood Dispenser</title>
+    <style>
+        /* CSS Variables */
+        :root {
+            --bg-body: #0f172a;
+            --bg-gradient: radial-gradient(circle at 50% -20%, #1e293b, #0f172a);
+            --text-main: #e2e8f0;
+            --text-sub: #cbd5e1;
+            --glass-bg: rgba(30, 41, 59, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --card-inner: rgba(15, 23, 42, 0.4);
+            --accent: #38bdf8;
+        }
+
+        [data-theme="light"] {
+            --bg-body: #f1f5f9;
+            --bg-gradient: radial-gradient(circle at 50% -20%, #e2e8f0, #f1f5f9);
+            --text-main: #1e293b;
+            --text-sub: #475569;
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(15, 23, 42, 0.1);
+            --card-inner: rgba(226, 232, 240, 0.5);
+            --accent: #0284c7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; transition: background 0.3s, color 0.3s; }
+        
+        body {
+            background: var(--bg-body);
+            color: var(--text-main);
+            overflow-x: hidden;
+            padding-bottom: 50px;
+        }
+
+        /* --- SPLASH SCREEN LOADING --- */
+        #loader {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f172a;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s ease, visibility 0.8s;
+        }
+
+        #loader h1 {
+            font-size: 4rem;
+            color: #38bdf8;
+            letter-spacing: 15px;
+            animation: pulse 2s infinite ease-in-out;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+        }
+
+        .loader-bar {
+            width: 150px; height: 2px;
+            background: rgba(255,255,255,0.1);
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loader-progress {
+            width: 0%; height: 100%;
+            background: #38bdf8;
+            position: absolute;
+            animation: load 2.5s forwards ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: scale(0.95); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        @keyframes load { to { width: 100%; } }
+
+        .loader-hidden { opacity: 0; visibility: hidden; }
+        /* --- END SPLASH SCREEN --- */
+
+        .theme-toggle {
+            position: fixed; top: 20px; right: 20px; z-index: 1000;
+            background: var(--accent); color: white; border: none;
+            width: 45px; height: 45px; border-radius: 50%;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+        }
+
+        .bg-glow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-gradient); z-index: -1; }
+        .blob { position: absolute; width: 300px; height: 300px; background: var(--accent); filter: blur(100px); border-radius: 50%; opacity: 0.1; animation: move 12s infinite alternate; }
+
+        @keyframes move { from { transform: translate(-10%, 10%); } to { transform: translate(30%, 40%); } }
+
+        header { padding: 40px 20px 20px; text-align: center; animation: fadeInDown 0.8s ease-out; }
+        .group-label { text-align: left; max-width: 500px; margin: 0 auto 10px; font-size: 0.75rem; font-weight: bold; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
+
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(34, 197, 94, 0.1); color: #22c55e;
+            padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 15px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 10px #22c55e; }
+
+        h1 { font-size: 2.2rem; background: linear-gradient(to right, var(--accent), #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; letter-spacing: 2px; }
+        .dev-badge { color: var(--text-sub); font-size: 0.85rem; margin-top: 8px; font-family: monospace; }
+
+        .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+        .image-container { width: 100%; text-align: center; margin-bottom: 25px; animation: fadeInUp 0.8s ease-out; }
+        .dispenser-image { width: 100%; border-radius: 24px; border: 2px solid var(--accent); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+
+        .glass-card { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 25px; margin-bottom: 20px; animation: fadeInUp 0.8s ease-out both; }
+        h2 { font-size: 1.1rem; margin-bottom: 15px; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+
+        .typing::after { content: "|"; animation: blink 0.7s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .list-info { list-style: none; }
+        .list-info li { margin-bottom: 10px; font-size: 0.9rem; color: var(--text-sub); display: flex; align-items: flex-start; gap: 10px; opacity: 0; animation: fadeInUp 0.5s ease-out forwards; }
+        .list-info li::before { content: "▹"; color: var(--accent); font-weight: bold; }
+
+        .logic-box { background: var(--card-inner); padding: 15px; border-radius: 16px; border: 1px solid var(--glass-border); color: var(--text-sub); font-size: 0.9rem; line-height: 1.6; }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        footer { text-align: center; padding: 20px; color: var(--text-sub); font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+
+<div id="loader">
+    <h1>P5RA</h1>
+    <div class="loader-bar">
+        <div class="loader-progress"></div>
+    </div>
+</div>
+
+<button class="theme-toggle" id="themeBtn">🌓</button>
+<div class="bg-glow"></div>
+<div class="blob"></div>
+
+<header>
+    <div class="group-label">KELOMPOK 1</div>
+    <div class="status-pill"><div class="dot"></div> PROJECT ACTIVE</div>
+    <h1>PLYWOOD DISPENSER</h1>
+    <div class="dev-badge">PROYEK P5RA XI IPA II</div>
+</header>
+
+<div class="container">
+    <div class="image-container">
+        <img src="gambar.jpg" alt="Dispenser Plywood" class="dispenser-image">
+    </div>
+
+    <div class="glass-card">
+        <h2>📝 Deskripsi Proyek</h2>
+        <p id="typewriter-text" class="typing" style="font-size: 0.9rem; line-height: 1.6; min-height: 80px;"></p>
+    </div>
+
+    <div class="glass-card" style="animation-delay: 0.3s;">
+        <h2>🛠️ Alat & Bahan</h2>
+        <ul class="list-info">
+            <li style="animation-delay: 1.5s;"><b>Struktur:</b> Plywood 9mm, Lem G, Vernis.</li>
+            <li style="animation-delay: 1.7s;"><b>Elektrikal:</b> Pompa DC 12V, Switch On-Off.</li>
+            <li style="animation-delay: 1.9s;"><b>Tools:</b> Palu, Solder, Kabel AWG, Gunting.</li>
+        </ul>
+    </div>
+
+    <div class="glass-card" style="animation-delay: 0.6s;">
+        <h2>⚙️ Cara Kerja System</h2>
+        <div class="logic-box" id="logic-text" style="min-height: 140px;"></div>
+    </div>
+
+    <div class="glass-card" style="animation-delay: 0.9s;">
+        <h2>👥 Anggota Kelompok 1</h2>
+        <div class="logic-box" style="font-family: monospace; color: var(--accent);" id="member-text"></div>
+    </div>
+</div>
+
+<footer>&copy; 2026 // KEDIRI TECH // MAN 1 KEDIRI</footer>
+
+<script>
+    // Theme Switcher Logic
+    const themeBtn = document.getElementById('themeBtn');
+    themeBtn.addEventListener('click', () => {
+        const body = document.body;
+        body.getAttribute('data-theme') === 'light' ? body.removeAttribute('data-theme') : body.setAttribute('data-theme', 'light');
+    });
+
+    // Content
+    const deskripsi = "Proyek ini lahir dari semangat kreativitas untuk mengubah material plywood menjadi alat yang fungsional. Plywood Dispenser bukan sekadar alat pengalir air, melainkan bukti bahwa teknologi sederhana jika digabungkan dengan desain yang presisi dapat menciptakan solusi praktis untuk kehidupan sehari-hari.";
+    const caraKerjaNarasi = "Sistem ini mengadopsi prinsip sirkulasi fluida dinamis yang dikendalikan oleh sirkuit elektrik sederhana. Proses dimulai saat sumber daya DC 12V mengalirkan arus menuju saklar. Ketika saklar tertutup (On), energi listrik memicu motor pompa untuk berputar secara kinetik, menciptakan gaya sentrifugal yang menghasilkan tekanan vakum. Tekanan ini menghisap air dari wadah penampung dan menyalurkannya melalui selang food-grade menuju output secara stabil dan higienis.";
+    const anggota = ["1. A. Zainal Bagus M. (Leader)", "2. [Nama Anggota]", "3. [Nama Anggota]", "4. [Nama Anggota]", "5. [Nama Anggota]"];
+
+    // Typewriter Functions
+    function typeWriter(text, elementId, speed, callback) {
+        let i = 0; const elem = document.getElementById(elementId);
+        elem.classList.add('typing');
+        function type() {
+            if (i < text.length) { elem.innerHTML += text.charAt(i); i++; setTimeout(type, speed); }
+            else { elem.classList.remove('typing'); if(callback) callback(); }
+        }
+        type();
+    }
+
+    function typeMembers(list, elementId, speed) {
+        let line = 0; const elem = document.getElementById(elementId);
+        function typeLine() {
+            if (line < list.length) {
+                let i = 0; let currentLine = list[line]; let lineElem = document.createElement("div"); elem.appendChild(lineElem);
+                function char() {
+                    if (i < currentLine.length) { lineElem.innerHTML += currentLine.charAt(i); i++; setTimeout(char, speed); }
+                    else { line++; setTimeout(typeLine, speed * 2); }
+                }
+                char();
+            }
+        }
+        typeLine();
+    }
+
+    // Splash Screen & Sequence Loader
+    window.onload = () => {
+        const loader = document.getElementById('loader');
+        
+        // Sembunyikan loader setelah 2.5 detik
+        setTimeout(() => {
+            loader.classList.add('loader-hidden');
+            
+            // Mulai animasi teks setelah loader hilang
+            setTimeout(() => {
+                typeWriter(deskripsi, "typewriter-text", 25, () => {
+                    setTimeout(() => {
+                        typeWriter(caraKerjaNarasi, "logic-text", 20, () => {
+                            setTimeout(() => { typeMembers(anggota, "member-text", 40); }, 500);
+                        });
+                    }, 1000);
+                });
+            }, 500);
+        }, 2500);
+    };
+</script>
+</body>
+</html>
